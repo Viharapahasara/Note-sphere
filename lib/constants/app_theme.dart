@@ -41,7 +41,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: AppColors.kdeepBlue, //[cite: 1]
         elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
 
       // Primary button styling

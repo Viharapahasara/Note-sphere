@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:notes_sphere/constants/app_colors.dart';
 import 'package:notes_sphere/constants/app_constent.dart';
 import 'package:notes_sphere/constants/text_style.dart';
+import 'package:notes_sphere/widgets/note_card.dart';
+import 'package:notes_sphere/widgets/progress_bar.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,6 +14,9 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
+
+    //claculation the progress precentage
+
     return Scaffold(
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -31,124 +35,47 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
-
           //main card
-          Padding(
+          const ProgressBar(compleatedTask: 10, totlaTask: 10,),
+
+          const Padding(
             padding:
                 EdgeInsets.symmetric(horizontal: AppConstants.kDefaultPadding),
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(AppConstants.kDefaultPadding),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Today's Progress",
-                          style: AppTextStyle.headingMedium,
-                        ),
-                        const SizedBox(height: 10,),
-
-                        //details
-                        SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.5,
-                          child: const Text(
-                            "You have Colpleted 1 out 3 tasks keep up the progress",
-                            style: AppTextStyle.bodyMedium,
-                          ),
-                        )
-                      ],
-                    ),
-
-                    //progress circle
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [
-                            AppColors.kdeepBlue,
-                            AppColors.kskyBlue,
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(100),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          "33%",
-                          style: AppTextStyle.progress,
-                        ),
-                      ),
-                    )
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppConstants.kDefaultPadding),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                //note
-                Padding(
-                  padding: EdgeInsets.symmetric(vertical:  AppConstants.kDefaultPadding, ),
-                  child: Card(
-                    
-                    child: SizedBox(
-                      height: 150,
-                      width: MediaQuery.of(context).size.width * 0.41,
-                      child: const Padding(
-                        padding: EdgeInsets.all(AppConstants.kDefaultPadding),
-                        child: Column(children: [
-                          Icon(Icons.bookmark_add_outlined, 
-                          size: 50, color:
-                           AppColors.kamberOrange),
-                                        
-                           Text("Notes",
-                           style: AppTextStyle.bodyLarge,),
-            
-                           Text("3 Notes",
-                           style: AppTextStyle.bodyMedium,)
-                        ],),
-                      ),
-                    ),
-                  ),
+                //note card
+                NoteCard(
+                  title: 'Notes',
+                  subDetails: '3 Notes',
+                  icon: Icons.bookmark_add_outlined,
                 ),
-            
-                 Padding(
-                  padding: EdgeInsets.symmetric(vertical:  AppConstants.kDefaultPadding),
-                  child: Card(
-                    
-                    child: SizedBox(
-                      height: 150,
-                      width: MediaQuery.of(context).size.width * 0.41,
-                      child: const Padding(
-                        padding: EdgeInsets.all(AppConstants.kDefaultPadding),
-                        child: Column(children: [
-                          Icon(Icons.bookmark_add_outlined, 
-                          size: 50, color:
-                           AppColors.kamberOrange),
-                                        
-                           Text("Notes",
-                           style: AppTextStyle.bodyLarge,),
-            
-                           Text("3 Notes",
-                           style: AppTextStyle.bodyMedium,)
-                        ],),
-                      ),
-                    ),
-                  ),
+
+                //to-do List card
+                NoteCard(
+                  title: 'TO-DO List',
+                  subDetails: '3 Task',
+                  icon: Icons.checklist_outlined,
                 ),
+              ],
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.all(AppConstants.kDefaultPadding),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text("Today's Progress",
+                style: AppTextStyle.headingMedium,),
             
-                //to do List
-                Card()
+                GestureDetector(
+                  onTap: (){
+                        print("see all working");
+                  },
+                  child: const Text("See All",
+                  style: AppTextStyle.button,),
+                )
               ],
             ),
           )
