@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:notes_sphere/constants/app_constent.dart';
 import 'package:notes_sphere/constants/text_style.dart';
+import 'package:notes_sphere/utils/router.dart';
 import 'package:notes_sphere/widgets/note_card.dart';
 import 'package:notes_sphere/widgets/progress_bar.dart';
 
@@ -36,26 +37,38 @@ class _HomePageState extends State<HomePage> {
           ),
 
           //main card
-          const ProgressBar(compleatedTask: 10, totlaTask: 10,),
+          const ProgressBar(compleatedTask: 5, totlaTask: 10,),
 
-          const Padding(
+           Padding(
             padding:
-                EdgeInsets.symmetric(horizontal: AppConstants.kDefaultPadding),
+                const EdgeInsets.symmetric(horizontal: AppConstants.kDefaultPadding),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 //note card
-                NoteCard(
-                  title: 'Notes',
-                  subDetails: '3 Notes',
-                  icon: Icons.bookmark_add_outlined,
+                GestureDetector(
+                  onTap: () {
+                   //go to the notes page
+                   AppRouter.router.push("/notes");
+                  },
+                  child: const NoteCard(
+                    title: 'Notes',
+                    subDetails: '3 Notes',
+                    icon: Icons.bookmark_add_outlined,
+                  ),
                 ),
 
                 //to-do List card
-                NoteCard(
-                  title: 'TO-DO List',
-                  subDetails: '3 Task',
-                  icon: Icons.checklist_outlined,
+                GestureDetector(
+                  onTap: (){
+                    //go to the todo Page
+                    AppRouter.router.push("/todo");
+                  },
+                  child: const NoteCard(
+                    title: 'TO-DO List',
+                    subDetails: '3 Task',
+                    icon: Icons.checklist_outlined,
+                  ),
                 ),
               ],
             ),

@@ -1,11 +1,28 @@
 
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:notes_sphere/constants/app_theme.dart';
+import 'package:notes_sphere/models/notes_model.dart';
+import 'package:notes_sphere/models/todo_model.dart';
 import 'package:notes_sphere/pages/home_page.dart';
 import 'package:notes_sphere/utils/router.dart';
 
 
-void main (){
+void main () async{
+
+  //initialize hive
+  await Hive.initFlutter();
+
+  //register the adapter
+  Hive.registerAdapter(NotesAdapter());
+  Hive.registerAdapter(todoAdapter());
+
+  //open Hive boxes
+  await Hive.openBox('notes');
+  await Hive.openBox('todos');
+
+
   runApp(MyApp());
 }
 
