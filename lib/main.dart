@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:notes_sphere/constants/app_theme.dart';
@@ -10,6 +11,8 @@ import 'package:notes_sphere/utils/router.dart';
 
 
 void main () async{
+  // Ensure Flutter bindings are initialized before calling SystemChrome
+  WidgetsFlutterBinding.ensureInitialized();
 
   //initialize hive
   await Hive.initFlutter();
@@ -21,6 +24,14 @@ void main () async{
   //open Hive boxes
   await Hive.openBox('notes');
   await Hive.openBox('todos');
+
+  // --- LOCK ORIENTATION TO PORTRAIT ONLY ---
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
+  
 
 
   runApp(MyApp());

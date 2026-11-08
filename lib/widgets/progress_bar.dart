@@ -35,7 +35,7 @@ class _ProgressBarState extends State<ProgressBar> {
                 children: [
                   const Text(
                     "Today's Progress",
-                    style: AppTextStyle.headingMedium,
+                    style: appTextStyle.headingMedium,
                   ),
                   const SizedBox(
                     height: 10,
@@ -46,7 +46,7 @@ class _ProgressBarState extends State<ProgressBar> {
                     width: MediaQuery.of(context).size.width * 0.5,
                     child: const Text(
                       "You have Colpleted 1 out 3 tasks keep up the progress",
-                      style: AppTextStyle.bodyMedium,
+                      style: appTextStyle.bodyMedium,
                     ),
                   )
                 ],
@@ -70,7 +70,7 @@ class _ProgressBarState extends State<ProgressBar> {
                 child: Center(
                   child: Text(
                     "${progress.toInt()}%",
-                    style: AppTextStyle.progress,
+                    style: appTextStyle.progress,
                   ),
                 ),
               )

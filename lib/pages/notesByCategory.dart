@@ -34,38 +34,48 @@ class _NotesbycategoryState extends State<Notesbycategory> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        title: Text(
+          widget.category,
+          style: appTextStyle.headingLarge,
+        ),
+        centerTitle: false,
+      ),
       body: Padding(
-        padding: const EdgeInsets.all(AppConstants.kDefaultPadding),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppConstants.kDefaultPadding),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                widget.category,
-                style: AppTextStyle.headingLarge,
-              ),
               const SizedBox(
                 height: 30,
               ),
-              GridView.builder(
-                shrinkWrap: true,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 20,
-                  crossAxisSpacing: 20,
-                  childAspectRatio: 6.5/10,
+              SizedBox(
+                // height: MediaQuery.of(context).size.height*0.75,
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 20,
+                    crossAxisSpacing: 20,
+                    childAspectRatio: 6.5 / 10,
+                  ),
+                  itemCount: noteList.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    return NoteCategoryCadr(
+                      noteTitle: noteList[index].title,
+                      notes: noteList[index].content,
+                      removeNote: () async {},
+                      editNote: () async {},
+                    );
+                  },
                 ),
-                itemCount: noteList.length,
-                itemBuilder: (BuildContext context, int index) {
-                  return NoteCategoryCadr(
-                    noteTitle: noteList[index].title,
-                    notes: noteList[index].content,
-                    removeNote: ()async {},
-                    editNote: ()async {},
-                  );
-                },
               ),
+              SizedBox(
+                height: MediaQuery.of(context).padding.bottom * 2,
+              )
             ],
           ),
         ),

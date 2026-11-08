@@ -94,6 +94,9 @@ class NotesService {
     }catch(err){
       print(err.toString());
     }
+  }
+
+   
 
     //method to  delete a note
   Future <void> deleteNote (String noteId)async {
@@ -109,7 +112,21 @@ class NotesService {
       print(err.toString());
     }
   }
+
+  // Method to add a note
+  Future<void> addNote(Notes note) async {
+    try {
+      final dynamic allNotes = _myBox.get('notes');
+      final List<Notes> notes = allNotes is List
+          ? allNotes.cast<Notes>()
+          : <Notes>[];
+      notes.add(note);
+      await _myBox.put('notes', notes);
+    } catch (e) {
+      print(e.toString());
+    }
   }
-
-
 }
+
+
+

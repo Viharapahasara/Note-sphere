@@ -5,6 +5,7 @@ import 'package:notes_sphere/constants/text_style.dart';
 import 'package:notes_sphere/models/notes_model.dart';
 import 'package:notes_sphere/services/notes_service.dart';
 import 'package:notes_sphere/utils/router.dart';
+import 'package:notes_sphere/widgets/CategoryInputBottomsheet.dart';
 import 'package:notes_sphere/widgets/notePage_card.dart';
 
 class NotesPage extends StatefulWidget {
@@ -50,12 +51,27 @@ class _NotesPageState extends State<NotesPage> {
     });
   }
 
+  //open bottom sheet
+  void openBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return CategoryInputBottomsheet(
+          onNewNote: () {},
+          inNewCategory: () {},
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () {
+          openBottomSheet();
+        },
         child: const Icon(Icons.add),
       ),
       body: Padding(
@@ -66,7 +82,7 @@ class _NotesPageState extends State<NotesPage> {
             children: [
               const Text(
                 'Notes',
-                style: AppTextStyle.headingLarge,
+                style: appTextStyle.headingLarge,
               ),
               const SizedBox(height: 20),
               if (noteWithCategory.isEmpty)
@@ -75,7 +91,7 @@ class _NotesPageState extends State<NotesPage> {
                 )
               else
                 SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.5,
+                 // height: MediaQuery.of(context).size.height * 0.9,
                   child: GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),

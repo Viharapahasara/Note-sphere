@@ -28,7 +28,7 @@ class _NotepageCardState extends State<NotepageCard> {
                 ),
                 Text(
                   widget.title,
-                  style: AppTextStyle.headingMedium,
+                  style: appTextStyle.headingMedium,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

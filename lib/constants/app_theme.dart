@@ -28,12 +28,14 @@ class AppTheme {
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.kdarkNavy, //[cite: 1]
         elevation: 0,
+        scrolledUnderElevation: 0.0,
         centerTitle: true,
         iconTheme: IconThemeData(color: AppColors.kpeachCream), //[cite: 1]
         titleTextStyle: TextStyle(
           color: AppColors.kpeachCream, //[cite: 1]
           fontSize: 20,
           fontWeight: FontWeight.bold,
+          
         ),
       ),
 

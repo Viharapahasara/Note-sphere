@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
-class AppTextStyle {
+class appTextStyle {
   // Large Heading Style
   static const TextStyle headingLarge = TextStyle(
     fontSize: 28,

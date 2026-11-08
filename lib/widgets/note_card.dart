@@ -31,10 +31,10 @@ class _NoteCardState extends State<NoteCard> {
                            AppColors.kamberOrange),
                                         
                            Text(widget.title,
-                           style: AppTextStyle.bodyLarge,),
+                           style: appTextStyle.bodyLarge,),
             
                            Text(widget.subDetails,
-                           style: AppTextStyle.bodyMedium,)
+                           style: appTextStyle.bodyMedium,)
                         ],),
                       ),
                     ),
