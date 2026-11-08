@@ -1,6 +1,7 @@
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:notes_sphere/models/notes_model.dart';
+import 'package:uuid/uuid.dart';
 
 class NotesService {
   List<Notes> allNotes = [
@@ -10,6 +11,7 @@ class NotesService {
       content:
           'Need to visit the supermarket this Saturday morning. Items to buy: Whole milk, fresh eggs, brown bread, coffee powder, snacks for movie night, hand soap, and kitchen towels. Dont forget to use the loyalty app at checkout!',
       date: DateTime.now(),
+      id: Uuid().v4()
     ),
     Notes(
       title: 'Weekend Movie Plan 🎬',
@@ -17,6 +19,7 @@ class NotesService {
       content:
           'Planning a relaxing binge-watch session for Saturday night. Options to consider: Interstellar for sci-fi, The Social Network for tech drama, or Knives Out for a fun mystery. Get popcorn ready and keep headphones charged!',
       date: DateTime.now(),
+      id: Uuid().v4()
     ),
     Notes(
       title: 'Family Catch-Up 📞',
@@ -24,6 +27,7 @@ class NotesService {
       content:
           'Call home around 7 PM today to talk with Mom and Dad. Ask how everyone is doing, update them on app project progress, confirm dates for the upcoming holiday trip, and remind sister about the gift list.',
       date: DateTime.now(),
+      id: Uuid().v4()
     ),
   ];
 
@@ -97,21 +101,16 @@ class NotesService {
   }
 
    
-
-    //method to  delete a note
-  Future <void> deleteNote (String noteId)async {
-    try{
-
-      final dynamic allNotes = await _myBox.get('notes');
-      final int index = allNotes.indexWhere((element) => element.id == noteId);
-
-      allNotes.removeAt(index);
-
-      await _myBox.put('notes', allNotes);
-    }catch(err){
-      print(err.toString());
-    }
+// Delete a note by its id
+Future<void> deleteNote(String noteId) async {
+  try {
+    final notes = await loadNotes();
+    notes.removeWhere((note) => note.id == noteId);
+    await _myBox.put('notes', notes);
+  } catch (err) {
+    print(err.toString());
   }
+}
 
   // Method to add a note
   Future<void> addNote(Notes note) async {
@@ -126,6 +125,20 @@ class NotesService {
       print(e.toString());
     }
   }
+
+  // Find a single note by its id (returns null if not found)
+Notes? getNoteById(String id) {
+  final dynamic stored = _myBox.get('notes');
+
+  if (stored is List) {
+    for (final item in stored) {
+      if (item is Notes && item.id == id) {
+        return item;
+      }
+    }
+  }
+  return null;
+}
 }
 
 

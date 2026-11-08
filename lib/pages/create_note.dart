@@ -5,12 +5,20 @@ import 'package:notes_sphere/constants/text_style.dart';
 import 'package:notes_sphere/models/notes_model.dart';
 import 'package:notes_sphere/services/notes_service.dart';
 import 'package:notes_sphere/utils/router.dart';
+import 'package:uuid/uuid.dart';
 
 class CreateNote extends StatefulWidget {
   // true  -> user types a brand new category name
   // false -> user picks an existing category from the dropdown
   final bool isNewCategory;
-  const CreateNote({super.key, required this.isNewCategory});
+  final bool isEditing;
+  final String id;
+
+  const CreateNote(
+      {super.key,
+      required this.isNewCategory,
+      required this.isEditing,
+      required this.id});
 
   @override
   State<CreateNote> createState() => _CreateNoteState();
@@ -25,6 +33,8 @@ class _CreateNoteState extends State<CreateNote> {
   final TextEditingController _contentController = TextEditingController();
   final TextEditingController _categoryController = TextEditingController();
 
+  //pass note
+
   // Single service instance used for loading and saving notes (Hive)
   final NotesService _notesService = NotesService();
 
@@ -34,10 +44,30 @@ class _CreateNoteState extends State<CreateNote> {
   // Currently selected category in the dropdown
   String _selectCategory = '';
 
+  // Original date of the note being edited
+  DateTime? _originalDate;
+
   @override
   void initState() {
     super.initState();
+
+    // When editing, put the saved data into the controllers as text
+    if (widget.isEditing) {
+      final note = _notesService.getNoteById(widget.id);
+
+      if (note != null) {
+        _titleController.text = note.title;
+        _contentController.text = note.content;
+        _categoryController.text =
+            note.category; // used when isNewCategory is true
+        _selectCategory = note.category; // used by the dropdown
+        _originalDate = note.date;
+      }
+    }
+
     _loadCategories();
+
+    print('isEditing: ${widget.isEditing}, id: "${widget.id}"');
   }
 
   // Load notes from Hive and build the unique category list
@@ -51,7 +81,6 @@ class _CreateNoteState extends State<CreateNote> {
       }
     }
 
-    // Guard: the widget may have been removed while loading
     if (!mounted) return;
 
     setState(() {
@@ -59,7 +88,8 @@ class _CreateNoteState extends State<CreateNote> {
         ..clear()
         ..addAll(categories);
 
-      // Select the first category by default so it is never saved empty
+      // Only pick the first category if nothing is selected yet
+      // (when editing, the note's own category is already selected)
       if (_categories.isNotEmpty && _selectCategory.isEmpty) {
         _selectCategory = _categories.first;
       }
@@ -83,6 +113,7 @@ class _CreateNoteState extends State<CreateNote> {
         // Wait until the note is really saved in Hive before navigating away
         await _notesService.addNote(
           Notes(
+            id: const Uuid().v4(),
             title: _titleController.text,
             category: widget.isNewCategory
                 ? _categoryController.text
@@ -141,8 +172,9 @@ class _CreateNoteState extends State<CreateNote> {
                 DropdownButtonFormField<String>(
                   // The key forces the dropdown to rebuild once the
                   // categories finish loading, so initialValue is applied
-                  key: ValueKey(_categories.length),
-                  initialValue: _selectCategory.isEmpty ? null : _selectCategory,
+                  key: ValueKey('${_categories.length}-$_selectCategory'),
+                  initialValue:
+                      _selectCategory.isEmpty ? null : _selectCategory,
                   decoration: InputDecoration(
                     labelText: 'Category',
                     border: OutlineInputBorder(

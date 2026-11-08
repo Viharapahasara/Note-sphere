@@ -3,6 +3,7 @@ import 'package:notes_sphere/constants/app_constent.dart';
 import 'package:notes_sphere/constants/text_style.dart';
 import 'package:notes_sphere/models/notes_model.dart';
 import 'package:notes_sphere/services/notes_service.dart';
+import 'package:notes_sphere/utils/router.dart';
 import 'package:notes_sphere/widgets/note_category_cadr.dart';
 
 class Notesbycategory extends StatefulWidget {
@@ -65,9 +66,14 @@ class _NotesbycategoryState extends State<Notesbycategory> {
                   itemCount: noteList.length,
                   itemBuilder: (BuildContext context, int index) {
                     return NoteCategoryCadr(
+                      noteId: noteList[index].id,
                       noteTitle: noteList[index].title,
                       notes: noteList[index].content,
-                      removeNote: () async {},
+                      removeNote: () async {
+                        // Delete the note from Hive using its id
+                        await noteService.deleteNote(noteList[index].id);
+                        AppRouter.router.go('/');
+                      },
                       editNote: () async {},
                     );
                   },

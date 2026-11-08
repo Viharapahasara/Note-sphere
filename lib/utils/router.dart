@@ -55,8 +55,12 @@ class AppRouter {
         name: 'createNote',
         path: '/create-note',
         builder: (context, state) {
-          final isNewCategory = state.extra as bool;
-          return  CreateNote(isNewCategory: isNewCategory );
+          final data = state.extra as Map<String, dynamic>? ?? {};
+
+          final bool isNewCategory = data['isNewCategory'] ?? false;
+          final bool isEditing = data['isEditing'] ?? false;
+          final String id = data['id'] ?? '';
+          return CreateNote(isNewCategory: isNewCategory, isEditing: isEditing, id: id);
         },
       )
     ],
