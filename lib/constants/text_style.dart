@@ -46,7 +46,7 @@ class appTextStyle {
 
   // Progress Text Style
   static const TextStyle progress = TextStyle(
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: FontWeight.bold,
     color: Colors.white,
   );

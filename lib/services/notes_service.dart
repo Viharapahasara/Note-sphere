@@ -1,25 +1,25 @@
+import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:notes_sphere/models/notes_model.dart';
 import 'package:uuid/uuid.dart';
 
 class NotesService {
   List<Notes> allNotes = [
     Notes(
-      title: 'Weekend Grocery Shopping 🛒',
-      category: 'Personal',
+      title: 'Welcome to Notes Sphere! 🚀',
+      category: 'Welcome',
       content:
-          'Need to visit the supermarket this Saturday morning. Items to buy: Whole milk, fresh eggs, brown bread, coffee powder, snacks for movie night, hand soap, and kitchen towels. Dont forget to use the loyalty app at checkout!',
+          'Start jotting down your brilliant ideas, quick thoughts, and daily to-dos right here. Everything stays safely saved on your device. Let\'s get creative!',
       date: DateTime.now(),
-      id: Uuid().v4()
+      id: const Uuid().v4(),
     ),
     Notes(
-      title: 'Weekend Movie Plan 🎬',
-      category: 'Entertainment',
+      title: 'How to Use This App 💡',
+      category: 'Tips',
       content:
-          'Planning a relaxing binge-watch session for Saturday night. Options to consider: Interstellar for sci-fi, The Social Network for tech drama, or Knives Out for a fun mystery. Get popcorn ready and keep headphones charged!',
+          'Tap the \'+\' button below to create a new note. Swipe left or right to organize, and use the search bar to find anything instantly. Simple and fast!',
       date: DateTime.now(),
-      id: Uuid().v4()
+      id: const Uuid().v4(),
     ),
     Notes(
       title: 'Family Catch-Up 📞',
@@ -27,13 +27,13 @@ class NotesService {
       content:
           'Call home around 7 PM today to talk with Mom and Dad. Ask how everyone is doing, update them on app project progress, confirm dates for the upcoming holiday trip, and remind sister about the gift list.',
       date: DateTime.now(),
-      id: Uuid().v4()
+      id: const Uuid().v4(),
     ),
   ];
 
   final _myBox = Hive.box('notes');
 
-  //check wether the user is new user
+  // Check whether the user is new
   Future<bool> isNewUser() async {
     return _myBox.isEmpty;
   }
@@ -45,7 +45,7 @@ class NotesService {
     }
   }
 
-  //Method to load the notes
+  // Method to load all notes
   Future<List<Notes>> loadNotes() async {
     final dynamic notes = _myBox.get('notes');
 
@@ -55,7 +55,7 @@ class NotesService {
     return [];
   }
 
-  //catagorize all notes using the loop
+  // Categorize all notes into a Map
   Map<String, List<Notes>> catagarizeNotes(List<Notes> allNotes) {
     final Map<String, List<Notes>> categorizedNotes = {};
 
@@ -69,77 +69,86 @@ class NotesService {
     return categorizedNotes;
   }
 
-  //method to get notes accoding to the category
-  Future<List<Notes>> getNotesByCatrgoryName (String category) async{
+  // Get notes according to the category
+  Future<List<Notes>> getNotesByCatrgoryName(String category) async {
+    final List<Notes> all = await loadNotes();
+    return all
+        .where((n) =>
+            n.category.trim().toLowerCase() == category.trim().toLowerCase())
+        .toList();
+  }
 
-    final dynamic storedNotes = _myBox.get('notes');
-    final List<Notes> notes = [];
-
-    if (storedNotes is List) {
-      for (final dynamic item in storedNotes) {
-        if (item is Notes && item.category == category) {
-          notes.add(item);
-        }
+  // Get all unique categories
+  Future<List<String>> getAllCategories() async {
+    final List<Notes> all = await loadNotes();
+    final List<String> categories = [];
+    for (final note in all) {
+      if (!categories.contains(note.category)) {
+        categories.add(note.category);
       }
     }
-    return notes;
+    return categories;
   }
 
-  //method to update / edit a note
-  Future <void> updateNote (Notes note)async {
-    try{
+  // Search notes by title, content, or category
+  Future<List<Notes>> searchNotes(String query) async {
+    final List<Notes> all = await loadNotes();
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return all;
+    return all.where((n) {
+      return n.title.toLowerCase().contains(q) ||
+          n.content.toLowerCase().contains(q) ||
+          n.category.toLowerCase().contains(q);
+    }).toList();
+  }
 
-      final dynamic allNotes = await _myBox.get('notes');
-      final int index = allNotes.indexWhere((element) => element.id == note.id);
-
-      allNotes[index] = note;
-
-      await _myBox.put('notes', allNotes);
-    }catch(err){
-      print(err.toString());
+  // Method to update / edit a note safely
+  Future<void> updateNote(Notes note) async {
+    try {
+      final List<Notes> notes = await loadNotes();
+      final int index = notes.indexWhere((element) => element.id == note.id);
+      if (index != -1) {
+        notes[index] = note;
+        await _myBox.put('notes', notes);
+      }
+    } catch (err) {
+      debugPrint(err.toString());
     }
   }
 
-   
-// Delete a note by its id
-Future<void> deleteNote(String noteId) async {
-  try {
-    final notes = await loadNotes();
-    notes.removeWhere((note) => note.id == noteId);
-    await _myBox.put('notes', notes);
-  } catch (err) {
-    print(err.toString());
+  // Delete a note by its id
+  Future<void> deleteNote(String noteId) async {
+    try {
+      final notes = await loadNotes();
+      notes.removeWhere((note) => note.id == noteId);
+      await _myBox.put('notes', notes);
+    } catch (err) {
+      debugPrint(err.toString());
+    }
   }
-}
 
-  // Method to add a note
+  // Method to add a new note
   Future<void> addNote(Notes note) async {
     try {
-      final dynamic allNotes = _myBox.get('notes');
-      final List<Notes> notes = allNotes is List
-          ? allNotes.cast<Notes>()
-          : <Notes>[];
+      final List<Notes> notes = await loadNotes();
       notes.add(note);
       await _myBox.put('notes', notes);
     } catch (e) {
-      print(e.toString());
+      debugPrint(e.toString());
     }
   }
 
   // Find a single note by its id (returns null if not found)
-Notes? getNoteById(String id) {
-  final dynamic stored = _myBox.get('notes');
+  Notes? getNoteById(String id) {
+    final dynamic stored = _myBox.get('notes');
 
-  if (stored is List) {
-    for (final item in stored) {
-      if (item is Notes && item.id == id) {
-        return item;
+    if (stored is List) {
+      for (final item in stored) {
+        if (item is Notes && item.id == id) {
+          return item;
+        }
       }
     }
+    return null;
   }
-  return null;
 }
-}
-
-
-

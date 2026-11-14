@@ -28,4 +28,20 @@ class todo {
       required this.time,
       required this.isDone
       }): id = id ?? const Uuid().v4();
+
+  todo copyWith({
+    String? id,
+    String? title,
+    DateTime? date,
+    DateTime? time,
+    bool? isDone,
+  }) {
+    return todo(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      date: date ?? this.date,
+      time: time ?? this.time,
+      isDone: isDone ?? this.isDone,
+    );
+  }
 }

@@ -6,16 +6,14 @@ import 'package:notes_sphere/services/notes_service.dart';
 import 'package:notes_sphere/utils/router.dart';
 
 class CategoryInputBottomsheet extends StatefulWidget {
-  final Function() onNewNote;
-  final Function() inNewCategory;
+  final VoidCallback? onNewNote;
+  final VoidCallback? inNewCategory;
 
   const CategoryInputBottomsheet({
     super.key,
-    required this.onNewNote,
-    required this.inNewCategory,
+    this.onNewNote,
+    this.inNewCategory,
   });
-
-  
 
   @override
   State<CategoryInputBottomsheet> createState() =>
@@ -23,129 +21,154 @@ class CategoryInputBottomsheet extends StatefulWidget {
 }
 
 class _CategoryInputBottomsheetState extends State<CategoryInputBottomsheet> {
- bool canCreateNewNote = false;
+  bool canCreateNewNote = false;
+  List<String> categories = [];
+  bool isLoading = true;
 
-// Get all unique category names from the notes saved in Hive
-Future<void> getAllCategories() async {
-  print('getAllCategories called');
-
-  final notes = await NotesService().loadNotes();
-  print('notes count: ${notes.length}');
-
-  final categories = <String>[];
-  for (final note in notes) {
-    if (!categories.contains(note.category)) {
-      categories.add(note.category);
-    }
+  Future<void> getAllCategories() async {
+    final cats = await NotesService().getAllCategories();
+    if (!mounted) return;
+    setState(() {
+      categories = cats;
+      canCreateNewNote = cats.isNotEmpty;
+      isLoading = false;
+    });
   }
-  print('categories: $categories');
 
-  if (!mounted) return;
-
-  setState(() {
-    canCreateNewNote = categories.isNotEmpty;
-  });
-  print('canCreateNewNote: $canCreateNewNote');
-}
-
- @override
- void initState() {
-   getAllCategories();
-   super.initState();
-   
- }
+  @override
+  void initState() {
+    super.initState();
+    getAllCategories();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      height: MediaQuery.of(context).size.height * 0.3,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppConstants.kDefaultPadding,
+        vertical: 24,
+      ),
       decoration: const BoxDecoration(
-          color: AppColors.kdeepBlue,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(30),
-            topRight: Radius.circular(30),
-          )),
-      child: Padding(
-        padding: const EdgeInsets.all(AppConstants.kDefaultPadding),
-        child: Column(
-          children: [
-            
-           
-            if (canCreateNewNote)
-            Column(
-              children: [
-                 SizedBox(
-              height: 20,
+        color: AppColors.kdeepBlue,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(28),
+          topRight: Radius.circular(28),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-                GestureDetector(
-                  onTap: () {
-                   
-                    
-                      AppRouter.router.pushNamed(
-                        'createNote',
-                        extra: {
-                          'isNewCategory': false,
-                          'isEditing': false,
-                          'id': '',
-                        },
-                      );
-                    
-                  },
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "Create a New Note",
-                        style:appTextStyle.bodyLarge,
-                      ),
-                      Icon(
-                        Icons.arrow_right_outlined,
-                      )
-                    ],
-                  ),
+          ),
+          const SizedBox(height: 20),
+
+          // Header
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'What would you like to create?',
+              style: appTextStyle.headingMedium,
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Option 1: Create note in existing category (if any categories exist)
+          if (canCreateNewNote) ...[
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.kdarkNavy,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ],
-            ),
-            const SizedBox(
-              height: 30,
-            ),
-            const Divider(
-              color: AppColors.kdarkNavy,
-            ),
-            const SizedBox(
-              height: 30,
-            ),
-            GestureDetector(
+                child: const Icon(
+                  Icons.note_add_outlined,
+                  color: AppColors.kskyBlue,
+                ),
+              ),
+              title: const Text(
+                'Create a New Note',
+                style: appTextStyle.bodyLarge,
+              ),
+              subtitle: Text(
+                'Add to ${categories.length} existing categories',
+                style: TextStyle(
+                  color: AppColors.kpeachCream.withValues(alpha: 0.6),
+                  fontSize: 12,
+                ),
+              ),
+              trailing: const Icon(
+                Icons.chevron_right,
+                color: AppColors.kpeachCream,
+              ),
               onTap: () {
                 Navigator.of(context).pop();
                 AppRouter.router.pushNamed(
                   'createNote',
                   extra: {
-                    'isNewCategory': true,
+                    'isNewCategory': false,
                     'isEditing': false,
                     'id': '',
                   },
                 );
               },
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "Create New Note Category",
-                    style: appTextStyle.bodyLarge,
-                  ),
-                  Icon(
-                    Icons.arrow_right_outlined,
-                  )
-                ],
+            ),
+            const Divider(color: AppColors.kdarkNavy, height: 24),
+          ],
+
+          // Option 2: Create a new note category
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.kdarkNavy,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.create_new_folder_outlined,
+                color: AppColors.kamberOrange,
               ),
             ),
-
-         
-            
-          ],
-        ),
+            title: const Text(
+              'Create New Note Category',
+              style: appTextStyle.bodyLarge,
+            ),
+            subtitle: Text(
+              'Start a brand new category folder',
+              style: TextStyle(
+                color: AppColors.kpeachCream.withValues(alpha: 0.6),
+                fontSize: 12,
+              ),
+            ),
+            trailing: const Icon(
+              Icons.chevron_right,
+              color: AppColors.kpeachCream,
+            ),
+            onTap: () {
+              Navigator.of(context).pop();
+              AppRouter.router.pushNamed(
+                'createNote',
+                extra: {
+                  'isNewCategory': true,
+                  'isEditing': false,
+                  'id': '',
+                },
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+        ],
       ),
     );
   }

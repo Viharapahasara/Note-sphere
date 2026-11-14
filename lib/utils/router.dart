@@ -65,4 +65,6 @@ class AppRouter {
       )
     ],
   );
+
+  static void refreshTodoPage(BuildContext context) {}
 }

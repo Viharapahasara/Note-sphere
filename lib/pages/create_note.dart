@@ -1,86 +1,62 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:notes_sphere/constants/app_colors.dart';
 import 'package:notes_sphere/constants/app_constent.dart';
 import 'package:notes_sphere/constants/text_style.dart';
 import 'package:notes_sphere/models/notes_model.dart';
 import 'package:notes_sphere/services/notes_service.dart';
-import 'package:notes_sphere/utils/router.dart';
 import 'package:uuid/uuid.dart';
 
 class CreateNote extends StatefulWidget {
-  // true  -> user types a brand new category name
-  // false -> user picks an existing category from the dropdown
   final bool isNewCategory;
   final bool isEditing;
   final String id;
 
-  const CreateNote(
-      {super.key,
-      required this.isNewCategory,
-      required this.isEditing,
-      required this.id});
+  const CreateNote({
+    super.key,
+    required this.isNewCategory,
+    required this.isEditing,
+    required this.id,
+  });
 
   @override
   State<CreateNote> createState() => _CreateNoteState();
 }
 
 class _CreateNoteState extends State<CreateNote> {
-  // GlobalKey to validate and manage the form state
   final _formKey = GlobalKey<FormState>();
 
-  // Controllers to read the text input values
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
-  final TextEditingController _categoryController = TextEditingController();
+  final TextEditingController _newCategoryController = TextEditingController();
 
-  //pass note
-
-  // Single service instance used for loading and saving notes (Hive)
   final NotesService _notesService = NotesService();
-
-  // Categories shown in the dropdown (built from the notes saved in Hive)
   final List<String> _categories = [];
-
-  // Currently selected category in the dropdown
   String _selectCategory = '';
-
-  // Original date of the note being edited
+  late bool _isCreatingNewCategory;
   DateTime? _originalDate;
 
   @override
   void initState() {
     super.initState();
+    _isCreatingNewCategory = widget.isNewCategory;
 
-    // When editing, put the saved data into the controllers as text
     if (widget.isEditing) {
       final note = _notesService.getNoteById(widget.id);
-
       if (note != null) {
         _titleController.text = note.title;
         _contentController.text = note.content;
-        _categoryController.text =
-            note.category; // used when isNewCategory is true
-        _selectCategory = note.category; // used by the dropdown
+        _selectCategory = note.category;
+        _newCategoryController.text = note.category;
         _originalDate = note.date;
       }
     }
 
     _loadCategories();
-
-    print('isEditing: ${widget.isEditing}, id: "${widget.id}"');
   }
 
-  // Load notes from Hive and build the unique category list
   Future<void> _loadCategories() async {
-    final notes = await _notesService.loadNotes();
-    final categories = <String>[];
-
-    for (final note in notes) {
-      if (!categories.contains(note.category)) {
-        categories.add(note.category);
-      }
-    }
-
+    final categories = await _notesService.getAllCategories();
     if (!mounted) return;
 
     setState(() {
@@ -88,189 +64,329 @@ class _CreateNoteState extends State<CreateNote> {
         ..clear()
         ..addAll(categories);
 
-      // Only pick the first category if nothing is selected yet
-      // (when editing, the note's own category is already selected)
+      if (_selectCategory.isNotEmpty && !_categories.contains(_selectCategory)) {
+        _categories.add(_selectCategory);
+      }
+
       if (_categories.isNotEmpty && _selectCategory.isEmpty) {
         _selectCategory = _categories.first;
+      }
+
+      if (_categories.isEmpty) {
+        _isCreatingNewCategory = true;
       }
     });
   }
 
-  // Clean up the controllers when the widget is disposed
   @override
   void dispose() {
     _titleController.dispose();
     _contentController.dispose();
-    _categoryController.dispose();
+    _newCategoryController.dispose();
     super.dispose();
   }
 
-  // --- Submit data ---
   Future<void> _submitData() async {
-    // Run all field validators first
-    if (_formKey.currentState!.validate()) {
-      try {
-        // Wait until the note is really saved in Hive before navigating away
-        await _notesService.addNote(
-          Notes(
-            id: const Uuid().v4(),
-            title: _titleController.text,
-            category: widget.isNewCategory
-                ? _categoryController.text
-                : _selectCategory,
-            content: _contentController.text,
-            date: DateTime.now(),
-          ),
+    if (!_formKey.currentState!.validate()) return;
+
+    final String finalCategory = _isCreatingNewCategory
+        ? _newCategoryController.text.trim()
+        : _selectCategory.trim();
+
+    if (finalCategory.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select or enter a category')),
+      );
+      return;
+    }
+
+    try {
+      if (widget.isEditing) {
+        final updatedNote = Notes(
+          id: widget.id,
+          title: _titleController.text.trim(),
+          category: finalCategory,
+          content: _contentController.text.trim(),
+          date: DateTime.now(),
         );
-
-        // Guard: do not use context if the widget is no longer in the tree
-        if (!mounted) return;
-
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Note saved successfully!')),
-        );
-
-        // Go back to the home page
-        AppRouter.router.go('/');
-      } catch (e) {
-        // Print the error and tell the user if saving fails
-        print('Error saving note: $e');
+        await _notesService.updateNote(updatedNote);
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save note: $e')),
+          const SnackBar(content: Text('Note updated successfully!')),
+        );
+      } else {
+        final newNote = Notes(
+          id: const Uuid().v4(),
+          title: _titleController.text.trim(),
+          category: finalCategory,
+          content: _contentController.text.trim(),
+          date: DateTime.now(),
+        );
+        await _notesService.addNote(newNote);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Note created successfully!')),
         );
       }
+
+      Navigator.of(context).pop(true);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving note: $e')),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final String formattedDate = DateFormat('dd MMMM yyyy, hh:mm a')
+        .format(_originalDate ?? DateTime.now());
+
     return Scaffold(
-      // Save button
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.save_alt_outlined),
-        onPressed: _submitData,
-      ),
       appBar: AppBar(
-        title: const Text("Create Note"),
+        title: Text(
+          widget.isEditing ? "Edit Note" : "New Note",
+          style: appTextStyle.headingMedium,
+        ),
         centerTitle: false,
         backgroundColor: AppColors.kdarkNavy,
-        // Keep a small elevation when the content scrolls under the app bar
-        scrolledUnderElevation: 1.0,
+        actions: [
+          IconButton(
+            tooltip: 'Save Note',
+            icon: const Icon(Icons.check, color: AppColors.kamberOrange, size: 28),
+            onPressed: _submitData,
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: AppColors.kamberOrange,
+        icon: const Icon(Icons.save_outlined, color: Colors.white),
+        label: Text(
+          widget.isEditing ? "Save" : "Create",
+          style: appTextStyle.button,
+        ),
+        onPressed: _submitData,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(AppConstants.kDefaultPadding),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppConstants.kDefaultPadding,
+        ),
         child: Form(
           key: _formKey,
           child: ListView(
             children: [
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
 
-              // Existing category: dropdown list
-              if (!widget.isNewCategory)
-                DropdownButtonFormField<String>(
-                  // The key forces the dropdown to rebuild once the
-                  // categories finish loading, so initialValue is applied
-                  key: ValueKey('${_categories.length}-$_selectCategory'),
-                  initialValue:
-                      _selectCategory.isEmpty ? null : _selectCategory,
-                  decoration: InputDecoration(
-                    labelText: 'Category',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+              // Category Selector Box
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.kdeepBlue,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.kskyBlue.withValues(alpha: 0.2),
                   ),
-                  items: _categories
-                      .map(
-                        (category) => DropdownMenuItem<String>(
-                          value: category,
-                          child: Text(category),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(
+                              Icons.folder_open_outlined,
+                              size: 18,
+                              color: AppColors.kskyBlue,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'Category',
+                              style: TextStyle(
+                                color: AppColors.kskyBlue,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
                         ),
+                        if (_categories.isNotEmpty)
+                          TextButton.icon(
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              visualDensity: VisualDensity.compact,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isCreatingNewCategory = !_isCreatingNewCategory;
+                              });
+                            },
+                            icon: Icon(
+                              _isCreatingNewCategory
+                                  ? Icons.list_outlined
+                                  : Icons.add_circle_outline,
+                              size: 16,
+                              color: AppColors.kamberOrange,
+                            ),
+                            label: Text(
+                              _isCreatingNewCategory
+                                  ? 'Choose Existing'
+                                  : 'New Category',
+                              style: const TextStyle(
+                                color: AppColors.kamberOrange,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (!_isCreatingNewCategory && _categories.isNotEmpty)
+                      DropdownButtonFormField<String>(
+                        value: _selectCategory.isEmpty ? null : _selectCategory,
+                        dropdownColor: AppColors.kdeepBlue,
+                        style: appTextStyle.bodyLarge,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: AppColors.kdarkNavy,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                        items: _categories.map((category) {
+                          return DropdownMenuItem<String>(
+                            value: category,
+                            child: Text(
+                              category,
+                              style: appTextStyle.bodyLarge,
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() {
+                              _selectCategory = value;
+                            });
+                          }
+                        },
                       )
-                      .toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectCategory = value ?? '';
-                    });
-                  },
+                    else
+                      TextFormField(
+                        controller: _newCategoryController,
+                        style: appTextStyle.bodyLarge,
+                        decoration: InputDecoration(
+                          hintText: 'e.g. Work, Ideas, Study',
+                          hintStyle: TextStyle(
+                            color: AppColors.kpeachCream.withValues(alpha: 0.4),
+                          ),
+                          filled: true,
+                          fillColor: AppColors.kdarkNavy,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                        validator: (value) {
+                          if (_isCreatingNewCategory &&
+                              (value == null || value.trim().isEmpty)) {
+                            return 'Please enter a category name';
+                          }
+                          return null;
+                        },
+                      ),
+                  ],
                 ),
+              ),
+              const SizedBox(height: 12),
 
-              // New category: text field
-              if (widget.isNewCategory)
-                TextFormField(
-                  controller: _categoryController,
-                  decoration: InputDecoration(
-                    labelText: 'New Category',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+              // Date info
+              Row(
+                children: [
+                  Icon(
+                    Icons.access_time,
+                    size: 14,
+                    color: AppColors.kpeachCream.withValues(alpha: 0.5),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    widget.isEditing
+                        ? 'Edited $formattedDate'
+                        : formattedDate,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.kpeachCream.withValues(alpha: 0.5),
                     ),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a category';
-                    }
-                    return null;
-                  },
-                ),
+                ],
+              ),
+              const SizedBox(height: 16),
 
-              const SizedBox(height: 40),
-
-              // Note title field
+              // Note Title Field
               TextFormField(
                 controller: _titleController,
                 style: const TextStyle(
                   color: AppColors.kpeachCream,
-                  fontSize: 38,
-                  fontWeight: FontWeight.w800,
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
                 ),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: 'Note Title',
                   hintStyle: TextStyle(
-                    color: AppColors.kslateBlue,
-                    fontSize: 40,
+                    color: AppColors.kslateBlue.withValues(alpha: 0.7),
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
                   ),
                   border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (value == null || value.trim().isEmpty) {
                     return 'Please enter a title';
                   }
                   return null;
                 },
               ),
+              const Divider(color: AppColors.kdeepBlue, thickness: 1.5),
+              const SizedBox(height: 8),
 
-              const SizedBox(height: 20),
-
-              // Note content field (grows with the text)
+              // Note Content Field
               TextFormField(
-                maxLines: null,
                 controller: _contentController,
+                maxLines: null,
+                minLines: 12,
                 keyboardType: TextInputType.multiline,
-                style: const TextStyle(
-                  color: AppColors.kpeachCream,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
+                style: appTextStyle.bodyLarge.copyWith(
+                  fontSize: 17,
+                  height: 1.5,
                 ),
-                decoration: const InputDecoration(
-                  hintText: 'Note Contents',
+                decoration: InputDecoration(
+                  hintText: 'Write your thoughts here...',
                   hintStyle: TextStyle(
-                    color: AppColors.kslateBlue,
-                    fontSize: 22,
+                    color: AppColors.kslateBlue.withValues(alpha: 0.7),
+                    fontSize: 17,
                   ),
                   border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (value == null || value.trim().isEmpty) {
                     return 'Please enter some content';
                   }
                   return null;
                 },
               ),
+              const SizedBox(height: 80),
             ],
           ),
         ),

@@ -7,6 +7,8 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
+      splashFactory: NoSplash.splashFactory,
+      highlightColor: Colors.transparent,
 
       // Main background color for all screens
       scaffoldBackgroundColor: AppColors.kdarkNavy, //[cite: 1]

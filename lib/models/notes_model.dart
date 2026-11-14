@@ -28,4 +28,20 @@ class Notes {
       required this.content,
       required this.date
       }): id = id ?? const Uuid().v4();
+
+  Notes copyWith({
+    String? id,
+    String? title,
+    String? category,
+    String? content,
+    DateTime? date,
+  }) {
+    return Notes(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      category: category ?? this.category,
+      content: content ?? this.content,
+      date: date ?? this.date,
+    );
+  }
 }
